@@ -37,19 +37,19 @@ float shotCooldown = 0.0f;
 unsigned char keys[256];
 unsigned char specialKeys[256];
 
-float rnd(float a, float b)
+static float rnd(float a, float b)
 {
     seedValue = seedValue * 1103515245 + 12345;
     int v = (seedValue / 65536) & 32767;
     return a + (b - a) * ((float)v / 32767.0f);
 }
 
-float wave(float speed, float shift)
+static float wave(float speed, float shift)
 {
     return (float)sin(globalTime * speed + shift);
 }
 
-void setMaterial(float r, float g, float b, float shine)
+static void setMaterial(float r, float g, float b, float shine)
 {
     GLfloat ambient[] = { r * 0.18f, g * 0.18f, b * 0.18f, 1.0f };
     GLfloat diffuse[] = { r, g, b, 1.0f };
@@ -63,7 +63,7 @@ void setMaterial(float r, float g, float b, float shine)
     glMaterialfv(GL_FRONT, GL_EMISSION, emission);
 }
 
-void setNeon(float r, float g, float b, float power)
+static void setNeon(float r, float g, float b, float power)
 {
     GLfloat ambient[] = { r * 0.20f, g * 0.20f, b * 0.20f, 1.0f };
     GLfloat diffuse[] = { r, g, b, 1.0f };
@@ -77,7 +77,7 @@ void setNeon(float r, float g, float b, float power)
     glMaterialfv(GL_FRONT, GL_EMISSION, emission);
 }
 
-void cube(float x, float y, float z, float sx, float sy, float sz)
+static void cube(float x, float y, float z, float sx, float sy, float sz)
 {
     glPushMatrix();
     glTranslatef(x, y, z);
@@ -86,7 +86,7 @@ void cube(float x, float y, float z, float sx, float sy, float sz)
     glPopMatrix();
 }
 
-void quad2(float x, float y, float w, float h)
+static void quad2(float x, float y, float w, float h)
 {
     glBegin(GL_QUADS);
     glVertex3f(x, y, 0.0f);
@@ -96,7 +96,7 @@ void quad2(float x, float y, float w, float h)
     glEnd();
 }
 
-void initStars()
+static void initStars()
 {
     for (int i = 0; i < STAR_COUNT; i++) {
         stars[i].x = rnd(-8.0f, 8.0f);
@@ -106,7 +106,7 @@ void initStars()
     }
 }
 
-void resetAsteroid(int i, float farZ)
+static void resetAsteroid(int i, float farZ)
 {
     asteroids[i].x = rnd(-3.2f, 3.2f);
     asteroids[i].y = rnd(-1.55f, 1.75f);
@@ -118,14 +118,14 @@ void resetAsteroid(int i, float farZ)
     asteroids[i].alive = 1;
 }
 
-void initAsteroids()
+static void initAsteroids()
 {
     for (int i = 0; i < ASTEROID_COUNT; i++) {
         resetAsteroid(i, -8.0f - (float)i * 1.8f);
     }
 }
 
-void resetGame()
+static void resetGame()
 {
     seedValue = 17;
     score = 0;
@@ -141,7 +141,7 @@ void resetGame()
     initAsteroids();
 }
 
-void setupLights()
+static void setupLights()
 {
     GLfloat cyan[] = { 0.0f, 0.85f, 1.0f, 1.0f };
     GLfloat pink[] = { 1.0f, 0.08f, 0.70f, 1.0f };
@@ -168,7 +168,7 @@ void setupLights()
     glLightfv(GL_LIGHT2, GL_POSITION, p2);
 }
 
-void drawStars()
+static void drawStars()
 {
     glDisable(GL_LIGHTING);
     glPointSize(2.0f);
@@ -184,11 +184,11 @@ void drawStars()
     glEnable(GL_LIGHTING);
 }
 
-void drawTunnel()
+static void drawTunnel()
 {
     glDisable(GL_LIGHTING);
     glLineWidth(2);
-    for (int r = 0; r < 12; r++) {
+    for (int r = 0; r < 15; r++) {
         float z = 2.0f - r * 2.4f + (float)fmod(globalTime * 4.0f, 2.4f);
         float size = 1.2f + (2.0f - z) * 0.11f;
         if (z > 2.5f) z -= 28.8f;
@@ -221,7 +221,7 @@ void drawTunnel()
     glEnable(GL_LIGHTING);
 }
 
-void drawShip()
+static void drawShip()
 {
     glPushMatrix();
     glTranslatef(shipX, shipY, 1.05f);
@@ -249,7 +249,7 @@ void drawShip()
     glPopMatrix();
 }
 
-void drawAsteroid(Asteroid* a)
+static void drawAsteroid(Asteroid* a)
 {
     glPushMatrix();
     glTranslatef(a->x, a->y, a->z);
@@ -269,7 +269,7 @@ void drawAsteroid(Asteroid* a)
     glPopMatrix();
 }
 
-void drawBullets()
+static void drawBullets()
 {
     for (int i = 0; i < BULLET_COUNT; i++) {
         if (!bullets[i].active) continue;
@@ -283,7 +283,7 @@ void drawBullets()
     }
 }
 
-void drawSegment(float x1, float y1, float x2, float y2)
+static void drawSegment(float x1, float y1, float x2, float y2)
 {
     glBegin(GL_LINES);
     glVertex3f(x1, y1, 0.0f);
@@ -291,7 +291,7 @@ void drawSegment(float x1, float y1, float x2, float y2)
     glEnd();
 }
 
-void digit(int d, float x, float y, float s)
+static void digit(int d, float x, float y, float s)
 {
     int mask[10] = {
         0x3F, 0x06, 0x5B, 0x4F, 0x66,
@@ -310,12 +310,12 @@ void digit(int d, float x, float y, float s)
     if (m & 0x40) drawSegment(x, y + mid, x + w, y + mid);
 }
 
-void letterS(float x, float y, float s)
+static void letterS(float x, float y, float s)
 {
     digit(5, x, y, s);
 }
 
-void letterC(float x, float y, float s)
+static void letterC(float x, float y, float s)
 {
     float w = 18.0f * s;
     float h = 32.0f * s;
@@ -324,12 +324,12 @@ void letterC(float x, float y, float s)
     drawSegment(x, y, x + w, y);
 }
 
-void letterO(float x, float y, float s)
+static void letterO(float x, float y, float s)
 {
     digit(0, x, y, s);
 }
 
-void letterR(float x, float y, float s)
+static void letterR(float x, float y, float s)
 {
     float w = 18.0f * s;
     float h = 32.0f * s;
@@ -341,7 +341,7 @@ void letterR(float x, float y, float s)
     drawSegment(x, y + mid, x + w, y);
 }
 
-void letterE(float x, float y, float s)
+static void letterE(float x, float y, float s)
 {
     float w = 18.0f * s;
     float h = 32.0f * s;
@@ -352,7 +352,7 @@ void letterE(float x, float y, float s)
     drawSegment(x, y, x + w, y);
 }
 
-void letterH(float x, float y, float s)
+static void letterH(float x, float y, float s)
 {
     float w = 18.0f * s;
     float h = 32.0f * s;
@@ -362,7 +362,7 @@ void letterH(float x, float y, float s)
     drawSegment(x, y + mid, x + w, y + mid);
 }
 
-void letterP(float x, float y, float s)
+static void letterP(float x, float y, float s)
 {
     float w = 18.0f * s;
     float h = 32.0f * s;
@@ -373,7 +373,7 @@ void letterP(float x, float y, float s)
     drawSegment(x, y + mid, x + w, y + mid);
 }
 
-void drawScoreNumber(int value, float x, float y)
+static void drawScoreNumber(int value, float x, float y)
 {
     if (value > 99999) value = 99999;
     int divisor = 10000;
@@ -390,7 +390,7 @@ void drawScoreNumber(int value, float x, float y)
     }
 }
 
-void drawHud()
+static void drawHud()
 {
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
@@ -445,7 +445,7 @@ void drawHud()
     glMatrixMode(GL_MODELVIEW);
 }
 
-void shoot()
+static void shoot()
 {
     if (shotCooldown > 0.0f || gameOver) return;
     for (int i = 0; i < BULLET_COUNT; i++) {
@@ -460,7 +460,7 @@ void shoot()
     }
 }
 
-void updateGame()
+static void updateGame()
 {
     globalTime += 0.035f;
     if (shotCooldown > 0.0f) shotCooldown -= 0.035f;
@@ -530,7 +530,7 @@ void updateGame()
     }
 }
 
-void display()
+static void display()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, winW, winH);
@@ -555,7 +555,7 @@ void display()
     glutSwapBuffers();
 }
 
-void reshape(int w, int h)
+static void reshape(int w, int h)
 {
     if (h == 0) h = 1;
     winW = w;
@@ -567,7 +567,7 @@ void reshape(int w, int h)
     glMatrixMode(GL_MODELVIEW);
 }
 
-void timer(int value)
+static void timer(int value)
 {
     updateGame();
     glutPostRedisplay();
