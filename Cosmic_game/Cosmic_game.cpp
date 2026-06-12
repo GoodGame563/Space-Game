@@ -51,16 +51,17 @@ static float wave(float speed, float shift)
 
 static void setMaterial(float r, float g, float b, float shine)
 {
-    GLfloat ambient[] = { r * 0.18f, g * 0.18f, b * 0.18f, 1.0f };
+    GLfloat ambient[] = { r * 0.35f, g * 0.35f, b * 0.35f, 1.0f };
     GLfloat diffuse[] = { r, g, b, 1.0f };
-    GLfloat specular[] = { 0.85f, 0.88f, 1.0f, 1.0f };
-    GLfloat shininess[] = { shine };
+    GLfloat specular[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    GLfloat shininess[] = { 6.0f };
     GLfloat emission[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-    glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
-    glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
-    glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
-    glMaterialfv(GL_FRONT, GL_EMISSION, emission);
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emission);
 }
 
 static void setNeon(float r, float g, float b, float power)
@@ -94,6 +95,104 @@ static void quad2(float x, float y, float w, float h)
     glVertex3f(x + w, y + h, 0.0f);
     glVertex3f(x, y + h, 0.0f);
     glEnd();
+}
+
+static const float SHIP_SCALE = 1.0f;
+static const float SHIP_HALF_WIDTH = 1.12f;
+static const float SHIP_HALF_HEIGHT = 0.40f;
+
+static float shipHalfWidth()
+{
+    return SHIP_HALF_WIDTH * SHIP_SCALE;
+}
+
+static float shipHalfHeight()
+{
+    return SHIP_HALF_HEIGHT * SHIP_SCALE;
+}
+
+static int asteroidHitsShip(const Asteroid* a)
+{
+    float dx = shipX - a->x;
+    float dy = shipY - a->y;
+    float asteroidHalf = a->size + 0.18f;
+    float rx = shipHalfWidth() + asteroidHalf;
+    float ry = shipHalfHeight() + asteroidHalf * 0.72f;
+    return (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) < 1.0f;
+}
+
+static void drawEngineFlame(float x, float y, float z, float length, float radius, float flicker)
+{
+    glPushMatrix();
+    glTranslatef(x, y, z);
+
+    setNeon(0.0f, 0.95f, 1.0f, 0.92f + 0.10f * flicker);
+    glutSolidSphere(radius * 0.56f, 16, 16);
+
+    setNeon(0.0f, 0.84f, 1.0f, 0.28f + 0.07f * flicker);
+    glPushMatrix();
+    glTranslatef(0.0f, 0.0f, length * 0.18f);
+    glScalef(0.82f, 0.82f, 1.0f);
+    glutSolidCone(radius * 1.25f, length * 0.58f, 14, 5);
+    glPopMatrix();
+
+    setNeon(1.0f, 0.44f, 0.08f, 0.34f + 0.10f * flicker);
+    glPushMatrix();
+    glTranslatef(0.0f, 0.0f, length * 0.34f);
+    glScalef(0.92f, 0.92f, 1.0f);
+    glutSolidCone(radius * 1.75f, length * 0.90f, 14, 5);
+    glPopMatrix();
+
+    setNeon(1.0f, 0.78f, 0.18f, 0.20f + 0.06f * flicker);
+    glPushMatrix();
+    glTranslatef(0.0f, 0.0f, length * 0.06f);
+    glutSolidSphere(radius * 0.88f, 12, 12);
+    glPopMatrix();
+
+    glPopMatrix();
+}
+
+static void drawWingAssembly(float side, float lift)
+{
+    glPushMatrix();
+    glTranslatef(0.34f * side, 0.10f * lift, 0.06f);
+    glRotatef(26.0f * side * lift, 0.0f, 0.0f, 1.0f);
+    glRotatef(6.0f * lift, 1.0f, 0.0f, 0.0f);
+
+    cube(0.08f * side, 0.00f, 0.01f, 0.72f, 0.035f, 0.10f);
+    cube(0.00f, 0.00f, 0.05f, 0.38f, 0.035f, 0.08f);
+
+    cube(0.16f * side, 0.00f, 0.08f, 0.28f, 0.025f, 0.06f);
+    cube(-0.02f * side, 0.00f, 0.12f, 0.22f, 0.025f, 0.08f);
+
+    cube(0.00f, 0.00f, 0.06f, 0.40f, 0.015f, 0.025f);
+    cube(0.00f, 0.00f, 0.12f, 0.14f, 0.015f, 0.020f);
+
+    cube(0.34f * side, 0.00f, 0.04f, 0.08f, 0.020f, 0.08f);
+
+    glPopMatrix();
+}
+
+static void drawThrusterPod(float side, float flicker)
+{
+    glPushMatrix();
+    glTranslatef(0.36f * side, -0.03f, 0.42f);
+
+    setMaterial(0.20f, 0.20f, 0.21f, 8.0f);
+    cube(0.0f, 0.0f, -0.02f, 0.16f, 0.08f, 0.24f);
+    cube(0.0f, 0.00f, 0.14f, 0.12f, 0.06f, 0.12f);
+
+    setMaterial(0.16f, 0.11f, 0.16f, 15.0f);
+    cube(0.0f, 0.03f, 0.04f, 0.10f, 0.04f, 0.10f);
+
+    setNeon(0.18f, 0.14f, 0.18f, 0.04f + 0.01f * flicker);
+    glPushMatrix();
+    glTranslatef(0.0f, 0.0f, 0.21f);
+    glutSolidTorus(0.022, 0.072, 8, 16);
+    glPopMatrix();
+
+    drawEngineFlame(0.0f, -0.005f, 0.28f, 0.36f + 0.05f * flicker, 0.085f, flicker);
+    glPopMatrix();
 }
 
 static void initStars()
@@ -187,8 +286,9 @@ static void drawStars()
 static void drawTunnel()
 {
     glDisable(GL_LIGHTING);
+
     glLineWidth(2);
-    for (int r = 0; r < 15; r++) {
+    for (int r = 0; r < 10; r++) {
         float z = 2.0f - r * 2.4f + (float)fmod(globalTime * 4.0f, 2.4f);
         float size = 1.2f + (2.0f - z) * 0.11f;
         if (z > 2.5f) z -= 28.8f;
@@ -205,8 +305,7 @@ static void drawTunnel()
         glVertex3f(-size, -size, z);
         glEnd();
     }
-
-    glLineWidth(4);
+    glLineWidth(3);
     glColor3f(1.0f, 0.05f, 0.70f);
     glBegin(GL_LINES);
     glVertex3f(-4.2f, -2.3f, 2.2f);
@@ -218,6 +317,7 @@ static void drawTunnel()
     glVertex3f(4.2f, 2.5f, 2.2f);
     glVertex3f(0.6f, 0.2f, -28.0f);
     glEnd();
+
     glEnable(GL_LIGHTING);
 }
 
@@ -226,25 +326,50 @@ static void drawShip()
     glPushMatrix();
     glTranslatef(shipX, shipY, 1.05f);
     glRotatef(shipX * -5.0f, 0.0f, 0.0f, 1.0f);
+    glScalef(SHIP_SCALE, SHIP_SCALE, SHIP_SCALE);
 
-    setNeon(0.0f, 0.85f, 1.0f, 0.18f);
+    setMaterial(0.05f, 0.05f, 0.05f, 8.0f);
+    cube(0.0f, -0.10f, -0.06f, 0.34f, 0.14f, 1.06f);
+    cube(0.0f, -0.03f, 0.10f, 0.24f, 0.18f, 0.76f);
+
+    cube(0.0f, 0.02f, 0.10f, 0.26f, 0.14f, 0.48f);
+    cube(0.0f, 0.10f, 0.30f, 0.18f, 0.10f, 0.24f);
+    cube(0.0f, -0.10f, 0.10f, 0.18f, 0.08f, 0.30f);
+
+    cube(0.0f, 0.18f, -0.04f, 0.16f, 0.08f, 0.30f);
+    cube(0.0f, 0.20f, 0.28f, 0.14f, 0.10f, 0.20f);
+
+
+    cube(0.0f, 0.00f, 0.26f, 0.18f, 0.08f, 0.38f);
+    cube(0.0f, 0.00f, 0.56f, 0.10f, 0.06f, 0.18f);
+
+
+    cube(0.0f, 0.12f, 0.50f, 0.10f, 0.06f, 0.24f);
+    cube(0.0f, -0.02f, 0.42f, 0.12f, 0.06f, 0.24f);
+
+    drawWingAssembly(-1.0f, 1.0f);
+    drawWingAssembly(1.0f, 1.0f);
+    drawWingAssembly(-1.0f, -1.0f);
+    drawWingAssembly(1.0f, -1.0f);
+
+    cube(0.0f, 0.03f, -0.54f, 0.10f, 0.04f, 0.16f);
     glPushMatrix();
-    glRotatef(180.0f, 0.0f, 1.0f, 0.0f);
-    glutSolidCone(0.24, 0.92, 4, 4);
+    glTranslatef(0.0f, 0.06f, 0.0f);
+    glutSolidSphere(0.12, 16, 16);
+    glPopMatrix();
+    glPushMatrix();
+    glTranslatef(0.0f, 0.18f, 0.22f);
+    glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
+    glutSolidTorus(0.018, 0.09, 10, 18);
     glPopMatrix();
 
-    setMaterial(0.06f, 0.08f, 0.24f, 55.0f);
-    cube(0.0f, -0.05f, 0.03f, 0.34f, 0.16f, 0.58f);
 
-    setNeon(1.0f, 0.06f, 0.70f, 0.16f);
-    cube(-0.36f, -0.12f, 0.08f, 0.55f, 0.08f, 0.34f);
-    cube(0.36f, -0.12f, 0.08f, 0.55f, 0.08f, 0.34f);
+    cube(0.0f, 0.01f, 0.58f, 0.12f, 0.04f, 0.10f);
+    cube(-0.10f, 0.12f, 0.38f, 0.08f, 0.03f, 0.08f);
+    cube(0.10f, 0.12f, 0.38f, 0.08f, 0.03f, 0.08f);
 
-    setNeon(1.0f, 0.50f, 0.08f, 0.60f + 0.25f * wave(18.0f, 0.0f));
-    glPushMatrix();
-    glTranslatef(0.0f, -0.07f, 0.40f);
-    glutSolidSphere(0.13, 18, 18);
-    glPopMatrix();
+
+    drawEngineFlame(0.0f, -0.01f, 0.70f, 0.60f + 0.06f * wave(14.0f, 0.4f), 0.12f, wave(16.0f, 0.0f));
 
     glPopMatrix();
 }
@@ -481,10 +606,15 @@ static void updateGame()
     if (keys['s'] || keys['S'] || specialKeys[GLUT_KEY_DOWN]) shipY -= 0.060f;
     if (keys[' ']) shoot();
 
-    if (shipX < -3.15f) shipX = -3.15f;
-    if (shipX > 3.15f) shipX = 3.15f;
-    if (shipY < -1.75f) shipY = -1.75f;
-    if (shipY > 1.35f) shipY = 1.35f;
+    float shipMinX = -3.15f + shipHalfWidth();
+    float shipMaxX = 3.15f - shipHalfWidth();
+    float shipMinY = -1.75f + shipHalfHeight();
+    float shipMaxY = 1.35f - shipHalfHeight();
+
+    if (shipX < shipMinX) shipX = shipMinX;
+    if (shipX > shipMaxX) shipX = shipMaxX;
+    if (shipY < shipMinY) shipY = shipMinY;
+    if (shipY > shipMaxY) shipY = shipMaxY;
 
     if (gameOver) return;
 
@@ -515,10 +645,7 @@ static void updateGame()
         }
 
         if (asteroids[i].z > 1.55f) {
-            float dx = shipX - asteroids[i].x;
-            float dy = shipY - asteroids[i].y;
-            float danger = asteroids[i].size + 0.38f;
-            if (dx * dx + dy * dy < danger * danger) {
+            if (asteroidHitsShip(&asteroids[i])) {
                 health--;
                 if (health <= 0) {
                     health = 0;
@@ -545,6 +672,7 @@ static void display()
     drawStars();
     drawTunnel();
     drawShip();
+
 
     for (int i = 0; i < ASTEROID_COUNT; i++) {
         drawAsteroid(&asteroids[i]);
